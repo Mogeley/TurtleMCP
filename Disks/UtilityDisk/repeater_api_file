@@ -1,0 +1,5 @@
+-- repeater API
+
+-- a repeater is initialized with an ID and caches computer ID's it can communicate with
+
+-- TODO: decide how to route messages across networkc and how to use channels

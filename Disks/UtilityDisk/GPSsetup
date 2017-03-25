@@ -1,0 +1,6 @@
+print("Setup GPS... Copying Files...")
+
+fs.copy("disk/gps_startup_file", "startup")
+fs.copy("disk/position_file", "position")
+
+print("Setup Complete! Set the coordinates in file: Position and reboot.")

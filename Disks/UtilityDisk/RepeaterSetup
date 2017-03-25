@@ -1,0 +1,16 @@
+print("WiFi Repeater Setup... Copying Files...")
+
+fs.copy("disk/repeater_startup_file", "startup")
+fs.copy("disk/repeater_api_file", "repeater")
+
+print("Startup File Copied... Identifying Network...")
+
+-- Ping network for a reply 
+
+-- Wait for Reply(s) - store all channels that replied
+
+-- choose a new channel +1 higher than all other channels for broadcasting
+
+-- save 
+
+print("Setup Complete! Reboot and enjoy!")

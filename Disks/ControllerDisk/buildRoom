@@ -1,0 +1,610 @@
+-- define bounds
+local x1 = -13
+local y1 = 1
+local z1 = 0
+local x2 = 40+x1
+local y2 = -2
+local z2 = 20
+
+
+local tArgs = { ... }
+if #tArgs ~= 1 then
+	print( "Usage: buildRoom <section(s): all,floor,ceiling,walls>" )
+	return
+end
+
+local sections = tArgs[1]
+
+print("Building: "..sections.." of Room.")
+
+
+local depth = 0
+local unloaded = 0
+local collected = 0
+
+local xPos,yPos,zPos = 0,0,0
+local xDir,zDir = 0,1
+
+local goTo -- Filled in further down
+local refuel -- Filled in further down
+
+local slotnum = 1
+
+turtle.select(slotnum)
+
+local alternate = 0
+local done = false
+local buildFloorFlag = false
+local buildCeilingFlag = false
+local buildWallsFlag = false
+
+print("Calculating Bricks needed for Build...")
+local bricksForFloor = math.abs(x2-x1) * math.abs(z2-z1) -- floor 
+local bricksForCeiling = math.abs(x2-x1) * math.abs(z2-z1) -- ceiling 
+local bricksForWalls = math.abs(x2-x1) * math.abs(z2-z1) -- Z walls 
+bricksForWalls = bricksForWalls + ((math.abs(y1-y2)-2) * (math.abs(x2-x1)-2) * 2) -- X walls
+local bricksNeeded = 0
+local bricksAllocated = 0
+
+-- get the total bricks that match slot 1 bricks
+turtle.select(slotnum)
+local actualBricks = turtle.getItemCount( slotnum )
+for s=2, 16 do
+	if turtle.compareTo( s ) then
+		actualBricks = actualBricks + turtle.getItemCount( s )
+	end
+end
+
+if string.find( sections , "floor" ) or sections == "all" then
+	bricksNeeded = bricksNeeded + bricksForFloor
+	-- see about floor
+	if actualBricks >= bricksForFloor then
+		print("Enough Blocks for Floor...")
+		buildFloorFlag = true
+		bricksAllocated = bricksForFloor
+	else
+		print("Not enough Bricks for the Floor...")
+		return
+	end
+end
+if string.find( sections , "ceiling" ) or sections == "all" then
+	bricksNeeded = bricksNeeded + bricksForFloor
+	-- see about floor
+	if actualBricks-bricksAllocated >= bricksForCeiling then
+		print("Enough Blocks for Ceiling... Building Ceiling...")
+		buildCeilingFlag = true
+		bricksAllocated = bricksAllocated + bricksForCeiling
+	else
+		print("Not enough Bricks for the Ceiling...")
+	end
+end
+if string.find( sections , "walls" ) or sections == "all" then
+	bricksNeeded = bricksNeeded + bricksForWalls
+	-- see about floor
+	if actualBricks-bricksAllocated >= bricksForWalls then
+		print("Enough Blocks for Walls... Building Walls...")
+		buildWallsFlag = true
+		bricksAllocated = bricksAllocated + bricksForWalls
+	else
+		print("Not enough Bricks for the Walls...")
+	end
+end
+
+print("Total Bricks Needed: "..bricksNeeded)
+
+print("Have "..actualBricks.. " Bricks")
+
+function refuel( ammount )
+	local fuelLevel = turtle.getFuelLevel()
+	if fuelLevel == "unlimited" then
+		return true
+	end
+	
+	local needed = ammount or (xPos + zPos + yPos + 2)
+	if turtle.getFuelLevel() < needed then
+		local fueled = false
+		for n=1,16 do
+			if turtle.getItemCount(n) > 0 then
+				turtle.select(n)
+				if turtle.refuel(1) then
+					while turtle.getItemCount(n) > 0 and turtle.getFuelLevel() < needed do
+						turtle.refuel(1)
+					end
+					if turtle.getFuelLevel() >= needed then
+						turtle.select(1)
+						return true
+					end
+				end
+			end
+		end
+		turtle.select(slotnum)
+		return false
+	end
+	
+	return true
+end
+
+function checkInventory()
+	if turtle.getItemCount( slotnum ) > 1 then
+		return true
+	else 
+		for s=2, 16 do
+			if turtle.compareTo( s ) then
+				turtle.select( s )
+				turtle.transferTo(slotnum)
+				turtle.select(slotnum)
+				if checkInventory() then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+local function collect()	
+	local bFull = true
+	local nTotalItems = 0
+	for n=1,16 do
+		local nCount = turtle.getItemCount(n)
+		if nCount == 0 then
+			bFull = false
+		end
+		nTotalItems = nTotalItems + nCount
+	end
+	
+	if nTotalItems > collected then
+		collected = nTotalItems
+		if math.fmod(collected + unloaded, 50) == 0 then
+			print( "Mined "..(collected + unloaded).." items." )
+		end
+	end
+	
+	if bFull then
+		print( "No empty slots left." )
+		return false
+	end
+	return true
+end
+
+local function tryForwards()
+	if not refuel() then
+		print( "Not enough Fuel" )
+		returnSupplies()
+	end
+	
+	while not turtle.forward() do
+		if turtle.detect() then
+			if turtle.dig() then
+				if not collect() then
+					returnSupplies()
+				end
+			else
+				return false
+			end
+		elseif turtle.attack() then
+			if not collect() then
+				returnSupplies()
+			end
+		else
+			sleep( 0.5 )
+		end
+	end
+	
+	xPos = xPos + xDir
+	zPos = zPos + zDir
+	return true
+end
+
+local function tryBack()
+	if not refuel() then
+		print( "Not enough Fuel" )
+		returnSupplies()
+	end
+	
+	if turtle.back() then
+		xPos = xPos - xDir
+		zPos = zPos - zDir
+		return true	
+	end
+	
+	return false
+end
+
+local function tryDown()
+	if not refuel() then
+		print( "Not enough Fuel" )
+		returnSupplies()
+	end
+	
+	while not turtle.down() do
+		if turtle.detectDown() then
+			if turtle.digDown() then
+				if not collect() then
+					returnSupplies()
+				end
+			else
+				return false
+			end
+		elseif turtle.attackDown() then
+			if not collect() then
+				returnSupplies()
+			end
+		else
+			sleep( 0.5 )
+		end
+	end
+
+	yPos = yPos - 1
+
+	return true
+end
+
+local function turnLeft()
+	turtle.turnLeft()
+	xDir, zDir = -zDir, xDir
+end
+
+local function turnRight()
+	turtle.turnRight()
+	xDir, zDir = zDir, -xDir
+end
+
+function tryPlace()
+	if checkInventory() then
+		if not turtle.detect() then
+			turtle.place()
+			return true
+		end
+	end
+	
+	print("Cannot Place")
+	return false
+end
+
+function tryPlaceDown()
+	if checkInventory() then
+		if not turtle.detectDown() then
+			turtle.placeDown()
+			return true
+		end
+	end
+	
+	print("Cannot Place Down")
+	return false
+end
+
+function tryPlaceUp()
+	if checkInventory() then
+		if not turtle.detectUp() then
+			turtle.placeUp()
+			return true
+		end
+	end
+	
+	print("Cannot Place Up")
+	return false
+end
+
+function buildFloor()
+	print("Building Floor...")
+	-- first go to the bottom left corner
+	goTo( x1,y2+1,z1, 0,1 )
+	for n=1,(x2-x1) do
+		for m=1,(z2-z1) do
+			tryPlaceDown()
+			if not turtle.detect() then
+				if not tryForwards() then
+					done = true
+					break
+				end
+			end
+		end
+		tryPlaceDown()
+		if n<(x2-x1) then
+			if math.fmod(n + alternate,2) == 0 then
+				turnLeft()
+				if not tryForwards() then
+					done = true
+					break
+				end
+				turnLeft()
+			else
+				turnRight()
+				if not tryForwards() then
+					done = true
+					break
+				end
+				turnRight()
+			end
+		end
+	end
+end
+
+function buildCeiling()
+	print("Building Ceiling...")
+	-- first go to the bottom left corner
+	goTo( x1,y1-1,z1, 0,1 )
+	for n=1,(x2-x1) do
+		for m=1,(z2-z1) do
+			tryPlaceUp()
+			if not turtle.detect() then
+				if not tryForwards() then
+					done = true
+					break
+				end
+			end
+		end
+		tryPlaceUp()
+		if n<(x2-x1) then
+			if math.fmod(n + alternate,2) == 0 then
+				turnLeft()
+				if not tryForwards() then
+					done = true
+					break
+				end
+				turnLeft()
+			else
+				turnRight()
+				if not tryForwards() then
+					done = true
+					break
+				end
+				turnRight()
+			end
+		end
+	end
+end
+
+function buildWalls()
+	print("Building Walls...")
+	-- Build walls go to top left corner
+	goTo( x1,y1-1,z1, 0,-1 )
+	for h=y2+1, y1-1 do
+		-- X1 wall
+		for m=1,(z2-z1) do
+			if not tryBack() then
+				done = true
+				break
+			end
+			if not tryPlace() then
+				goTo( 0,0,0,0,1 )
+				print("Need More Blocks...")
+			end
+		end
+		turnRight()
+		if not tryBack() then
+			done = true
+			break
+		end
+		tryPlace()
+
+		--Z2 Wall
+		for m=1,(x2-x1-2) do
+			if not tryBack() then
+				done = true
+				break
+			end
+			if not tryPlace() then
+				goTo( 0,0,0,0,1 )
+				print("Need More Blocks...")
+			end
+		end
+		turnRight()
+		if not tryBack() then
+			done = true
+			break
+		end
+		tryPlace()
+
+		-- X2 wall
+		for m=1,(z2-z1-1) do
+			if not tryBack() then
+				done = true
+				break
+			end
+			if not tryPlace() then
+				goTo( 0,0,0,0,1 )
+				print("Need More Blocks...")
+			end
+		end
+		turnRight()
+		if not tryBack() then
+			done = true
+			break
+		end
+		tryPlace()
+
+		--Z1 Wall
+		for m=1,(x2-x1-2) do
+			if not tryBack() then
+				done = true
+				break
+			end
+			tryPlace()
+		end
+		if not turtle.detectDown() then
+			if not tryDown() then -- go down if we can
+				done = true
+				break
+			else
+				tryPlaceUp()
+				if not tryBack() then
+					done = true
+					break
+				end
+				turnRight()
+			end
+		else -- no room down, turn back up and place
+			turnRight()
+			if not tryBack() then
+				done = true
+				break
+			end
+			tryPlace()
+		end
+	end
+end
+
+function goTo_regular( x, y, z, xd, zd )
+	while yPos < y do
+		if turtle.up() then
+			yPos = yPos + 1
+		elseif turtle.digUp() or turtle.attackUp() then
+			collect()
+		else
+			sleep( 0.5 )
+		end
+	end
+
+	if xPos > x then
+		while xDir ~= -1 do
+			turnLeft()
+		end
+		while xPos > x do
+			if turtle.forward() then
+				xPos = xPos - 1
+			elseif turtle.dig() or turtle.attack() then
+				collect()
+			else
+				sleep( 0.5 )
+			end
+		end
+	elseif xPos < x then
+		while xDir ~= 1 do
+			turnLeft()
+		end
+		while xPos < x do
+			if turtle.forward() then
+				xPos = xPos + 1
+			elseif turtle.dig() or turtle.attack() then
+				collect()
+			else
+				sleep( 0.5 )
+			end
+		end
+	end
+	
+	if zPos > z then
+		while zDir ~= -1 do
+			turnLeft()
+		end
+		while zPos > z do
+			if turtle.forward() then
+				zPos = zPos - 1
+			elseif turtle.dig() or turtle.attack() then
+				collect()
+			else
+				sleep( 0.5 )
+			end
+		end
+	elseif zPos < z then
+		while zDir ~= 1 do
+			turnLeft()
+		end
+		while zPos < z do
+			if turtle.forward() then
+				zPos = zPos + 1
+			elseif turtle.dig() or turtle.attack() then
+				collect()
+			else
+				sleep( 0.5 )
+			end
+		end	
+	end
+	
+	while yPos > y do
+		if turtle.down() then
+			yPos = yPos - 1
+		elseif turtle.digDown() or turtle.attackDown() then
+			collect()
+		else
+			sleep( 0.5 )
+		end
+	end
+	
+	while zDir ~= zd or xDir ~= xd do
+		turnLeft()
+	end
+end
+
+function goTo( x, y, z, xd, zd )
+	-- is current position on bounds - route inside walls instead fo through them
+	if xPos == x1 then
+		goTo_regular(xPos+1, yPos, zPos, 0,1)
+	end
+	if xPos == x2 then
+		goTo_regular(xPos-1, yPos, zPos, 0,1)
+	end
+	if yPos == y1 then
+		goTo_regular(xPos, yPos-1, zPos, 0,1)
+	end
+	if yPos == y2 then
+		goTo_regular(xPos, yPos+1, zPos, 0,1)
+	end
+	if zPos == z1 then
+		goTo_regular(xPos, yPos, zPos+1, 0,1)
+	end
+	if zPos == z2 then
+		goTo_regular(xPos, yPos, zPos-1, 0,1)
+	end
+
+	local nx,ny,nz = x,y,z
+
+	-- is destination on bounds - route inside walls instead of through them
+	if x == x1 then
+		nx = x+1
+	end
+	if x == x2 then
+		nx = x-1
+	end
+	if y == y1 then
+		ny = y-1
+	end
+	if y == y2 then
+		ny = y+1
+	end
+	if z == z1 then
+		nz = z+1
+	end
+	if z == z2 then
+		nz = z-1
+	end
+
+	-- do safe route then final route
+	goTo_regular(nx, ny, nz, xd,zd)
+	goTo_regular(x, y, z, xd,zd)
+end
+
+if not refuel() then
+	print( "Out of Fuel" )
+	return
+end
+
+
+-- build floor
+if buildFloorFlag == true then
+	buildFloor()
+	print("Floor Built")
+end
+
+
+-- build ceiling
+if buildCeilingFlag == true then
+	buildCeiling()
+	print("Ceiling Built")
+end
+
+
+-- build walls
+if buildWallsFlag == true then
+	buildWalls()
+	print("Walls Built")
+end
+
+
+-- Return to where we started
+goTo( 0,0,0,0,-1 )
+goTo( 0,0,0,0,1 )
+
+print("Complete!")

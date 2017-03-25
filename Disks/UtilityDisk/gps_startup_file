@@ -1,0 +1,2 @@
+os.loadAPI("position")
+shell.run("gps","host", position.x, position.y, position.z)
