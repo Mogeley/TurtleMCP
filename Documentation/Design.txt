@@ -1,0 +1,74 @@
+# TurtleMCP Design
+
+TurtleMCP is deisgned to: 
+1) Create and control tasks from a centralized controller
+2) Tasks are broken down into commands that are sent out to Turtles to perform
+3) Turtles respond with messages to coordinate tasks and movements
+4) GPS is leveraged and needed in the starting area, ouside of GPS range each Turtle maintains it's position
+
+5) Record Positions / Paths / Areas for later use or identification. Current use is for space allocation and coordination.
+
+Tasks:
+1) Mine - mines a defined area for resources
+2) AutoMine - automatically mines for resources. One or more boundaries can be set for where NOT to mine.
+3) Explore - explores an area looking for resources
+4) Build - builds a specified pattern in a specified location
+5) Supply - Resupplies other Turtles
+
+Libraries:
+1) Move - go to a position without effecting the environment, path used is tracked.
+2) Dig - digs a block
+3) Gather - gathers blocks / resources from chests to from open world
+4) Refuel - refuels Turtle
+5) Place - places blocks
+6) Drop - drops inventory
+7) RunState - specifies a Turtles Run State.
+8) Inventory - manages inventory
+9) Messaging - deals with messaging
+10) Log - writes logs
+11) State - Save, Load, Manage component states
+
+Core MCP: - The MCP is the central location to recieve all commands and messages. They are processed here and the proper response is determined.
+1) Startup
+	a) Initialize Wifi
+	b) Load Turtle States / Command States
+2) Run Loop
+	a) Check Messages
+	b) Process Messages
+	c) Log Replies / Commands
+	d) Send Replies / Commands
+3) Reboot / Stop / Shutdown
+	a) Send Shutdown Signal
+	b) Listen for Acknowledgements?
+	c) Save State
+
+Core Turtle:
+1) Startup
+	a) Set RunState = Stop
+	b) Load Id, Last Position, Channel
+	c) Initialize Wifi Listener / GPS
+	d) Determine current position
+	e) Sync Position and Commands with MCP
+2) Run Loop
+	a) Check Messages
+	b) Wait for Command / Do Commands
+	c) On Event Send Message
+3) On ShutDown Signal
+	a) RunState = Stop
+	b) Save State
+
+Core Commander: - user interface to provide tasks, can have more than one.
+1) Startup
+	a) Initialize Wifi
+	b) Query Tasks
+	c) Query Turtles
+2) Run Loop
+	a) Check Messages
+	b) Process Messages
+	c) Check UI
+	d) On Event Send Command
+3) On ShutDown Signal
+	a) Change UI to shutdown mode
+	b) listen for messages
+
+
