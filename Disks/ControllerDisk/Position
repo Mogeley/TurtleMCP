@@ -1,0 +1,103 @@
+-- Position API
+
+-- requires the API's: Vector
+os.loadAPI("Vector")
+
+coordinates = vector.new(0,0,0)
+xDir,zDir = 0,0 -- 0,0 is unkown, 0,1 is south, 0,-1 is north, 1,0 is east -1,0 is west
+heading = 0     -- 0:Unknown, 1:N, 2:E, 3:S, 4:W
+
+function getGPS()
+	local temp = vector.new(gps.locate())
+	if not temp.x then
+		print("Position Request Failed!")
+	else
+		print("Position: "..temp.x..", "..temp.y..", "..temp.z)
+		coordinates = temp
+	end
+end
+
+function getSavedCoordinates()
+	-- get saved coordinates and heading
+end
+
+function HeadingToString()
+	if heading == 1 then 
+		return "North"
+	elseif heading == 2 then 
+		return "East"
+	elseif heading == 3 then 
+		return "South"
+	elseif heading == 4 then 
+		return "West"
+	end
+	return "Unknown"
+end
+
+function getheadingFromDelta()
+	local newPos = vector.new(gps.locate())
+	local delta = newPos-coordinates
+	xDir = delta.x
+	zDir = delta.z
+	if xDir == 1 then heading = 2 -- East
+	elseif xDir == -1 then heading = 4 -- West
+	elseif zDir == 1 then heading = 3 -- South
+	elseif zDir == -1 then heading = 1 -- North
+	end
+	print("Heading: "..HeadingToString())
+end
+
+function FindHeading()
+	if not turtle.detect() then
+		if turtle.forward() then
+			getheadingFromDelta()
+			turtle.back()
+		end
+	else
+		if turtle.back() then
+			getheadingFromDelta()
+			turtle.forward()
+		end
+	end
+end
+
+function ForwardMatrix()
+	-- vector based on ...
+	--xPos = xPos + xDir
+	--zPos = zPos + zDir
+	return vector.new(xDir, 0, zDir)
+end
+
+function Forward()
+	coordinates = coordinates + ForwardMatrix()
+end
+
+function Back()
+	coordinates = coordinates - ForwardMatrix()
+end
+
+function Up()
+	coordinates = coordinates + vector.new(0, 1, 0)
+end
+
+function Down()
+	coordinates = coordinates - vector.new(0, 1, 0)
+end
+
+function TurnLeft()
+	if heading == 0 then return 0
+	xDir, zDir = -zDir, xDir
+	if heading > 1 then 
+		heading = heading - 1
+	else
+		heading = 4
+end
+
+function TurnRight()
+	if heading == 0 then return 0
+	xDir, zDir = zDir, -xDir
+	if heading < 4 then 
+		heading = heading + 1
+	else
+		heading = 1
+end

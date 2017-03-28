@@ -1,0 +1,53 @@
+-- Move API - intended for use with GPS.
+
+-- requires the API's: Position
+os.loadAPI("Position")
+
+
+function Forward()
+	if turtle.forward() then
+		Position.Forward()
+		return true
+	end
+	return false
+end
+
+function Back()
+	if turtle.back() then
+		Position.Back()
+		return true
+	end
+	return false
+end
+
+function Up()
+	if turtle.up() then
+		Position.Up()
+		return true
+	end
+	return false
+end
+
+function Down()
+	if turtle.down() then
+		Position.Down()
+		return true
+	end
+	return false
+end
+
+function TurnLeft()
+	if turtle.turnLeft() then
+		Position.TurnLeft()
+		return true
+	end
+	return false
+end
+
+function TurnRight()
+	if turtle.turnRight() then
+		Position.TurnRight()
+		return true
+	end
+	return false
+end
