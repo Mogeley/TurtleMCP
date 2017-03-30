@@ -1,0 +1,24 @@
+-- setup variables
+local modem -- declare modem variable
+
+
+-- set as local function so it can be initialized by self only
+local function InitializeModem() 
+	local peripheralList = peripheral.getNames()
+
+	for i = 1, #peripheralList do
+		if peripheral.getType( peripheralList[i] ) == "modem" then
+			print("Initializing Modem...")
+			modem = peripheral.wrap( peripheralList[i] )
+			modem.open(	os.getComputerID() ) -- open channel matching the computer ID for listening
+			-- NOTE - may want to add group channels so that MCP can send out a single broadcast to a group
+		end
+	end
+end
+
+-- listens for a message
+function Listen()
+	local event, modemSide, senderChannel, replyChannel, message, senderDistance = os.pullEvent("modem_message")
+end
+
+InitializeModem()

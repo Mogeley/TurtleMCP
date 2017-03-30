@@ -1,0 +1,36 @@
+-- Turtle Run Program
+print("Starting Turtle runtime.")
+
+-- init libraries
+os.loadAPI("Wireless") -- Init wireless modem
+-- os.loadAPI("gps") - not sure if this is needed
+os.loadAPI("Move")
+
+runMode = "run"
+runState = "waitForCommand"
+
+-- load Turtle state - if one exists
+
+-- get GPS position
+Position.getGPS()
+
+
+-- Run Loop
+while runMode == "run" do
+	-- change operatoins based on runState
+	if runState == "waitForCommand" then
+		Wireless.Listen()
+		-- process message
+	elseif runState == "doCommand" then
+		-- run functions in parallel - waiting for one of these to complete before starting again
+		parallel.waitForAny(doCommand, Wireless.Listen()) 
+	end
+end
+
+-- save Turtle state
+
+if runMode == "reboot" then
+	os.reboot()
+end
+
+print("Exiting Turtle Runtime.")
