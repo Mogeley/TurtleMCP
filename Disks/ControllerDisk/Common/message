@@ -1,0 +1,26 @@
+-- a generic message data format. Use for building and parsing messages to be sent / received
+
+local message = {
+	tostring = function( self )
+		return self
+	end,
+}
+
+local messageMetatable = {
+	__index = message,
+	__tostring = message.tostring,
+}
+
+function new(toId, fromId, messageId, messageType, messageDetails)
+	local m = {
+		toId = toId,
+		fromId = fromId,
+		messageId = messageId
+		messageType = messageType,
+		messageDetails = messageDetails,
+	}
+	setmetatable( m, messageMetatable )
+	return m
+end
+
+-- sample messages { command = "mine", startVector = { x,y,z}, endVector = { x,y,z} }

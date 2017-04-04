@@ -1,5 +1,9 @@
 -- setup variables
+os.loadAPI("modemMessage")
+os.loadAPI("message")
+
 local modem -- declare modem variable
+msg
 
 
 -- set as local function so it can be initialized by self only
@@ -8,7 +12,7 @@ local function InitializeModem()
 
 	for i = 1, #peripheralList do
 		if peripheral.getType( peripheralList[i] ) == "modem" then
-			print("Initializing Modem...")
+			print("Initializing Modem on Channel: "..os.getComputerID())
 			modem = peripheral.wrap( peripheralList[i] )
 			modem.open(	os.getComputerID() ) -- open channel matching the computer ID for listening
 			-- NOTE - may want to add group channels so that MCP can send out a single broadcast to a group
@@ -16,9 +20,24 @@ local function InitializeModem()
 	end
 end
 
+function Send(toChannel, fromChannel, messageData)
+	-- modem.transmit(number channel, number replyChannel, message messageData)
+	modem.transmit(toChannel, fromChannel, messageData)
+end
+
+-- sends Acknowledgement message
+function Acknowledge(modemMSG)
+	-- transmit an acknoledgement message back to the sender with message Id
+	Send(modemMSG.replyChannel, os.getComputerID(), message.new(modemMSG.messageData.fromId, modemMSG.messageData.toId, modemMSG.messageData.messageId, "Acknowledge", {})) 
+end
+
 -- listens for a message
-function Listen()
-	local event, modemSide, senderChannel, replyChannel, message, senderDistance = os.pullEvent("modem_message")
+function Listen(acknowledge)
+	modemMSG = modemMessage.new(os.pullEvent("modem_message"))
+	if acknowledge then
+		Acknowledge(modemMSG)
+	end
+	return modemMSG
 end
 
 InitializeModem()

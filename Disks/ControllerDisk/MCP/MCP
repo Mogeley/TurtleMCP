@@ -1,0 +1,62 @@
+-- Turtle MCP - Master Control Program
+print("Starting MCP.")
+print("Computer ID: "..os.getComputerID())
+print("Computer Channel: "..os.getComputerID())
+
+-- init libraries
+os.loadAPI("Wireless") -- Init wireless modem
+
+-- variable setup
+turtles = {} -- list of turtles available for use with assignments
+messages = {} -- list of outstanding messages - messages that have not been acknowledged
+jobs = {}     -- list of current jobs being controlled
+messageId = 0 -- starting message Id
+jobId = 0     -- starting job Id
+
+-- Initialize MCP
+-- load turtles, messages, jobs from disk
+
+
+runMode = "run"
+runState = "startup"
+
+print("runMode: "..runMode)
+print("runState: "..runState)
+
+-- Run Loop
+while runMode == "run" do
+	-- change operations based on runState
+	if runState == "startup" then
+		-- send out startup signal 
+
+		runState = "normal"
+	elseif runState == "normal" then
+		-- listen for commands from commanders and messages from turtles
+		local modemMSG = Wireless.Listen(acknowledge=true)
+
+		-- handle messages
+		if modemMSG.messageData.messageType == "Job" then
+			-- handle "Job" messages from Commanders
+			if modemMSG.messageData.messageDetails.jobId == 0 then -- new job
+				-- job has: type, state, parameters
+				local newJob = modemMSG.messageData.messageDetails
+				jobId = jobId + 1
+				newJob.Id = jobId
+				table.insert(jobs, job.new(newJob))
+			else -- update job details
+			end
+		elseif modemMSG.messageData.messageType == "Direct" then
+			-- handle direct control messages
+		else
+			-- handle turtle messages / acks
+		end
+	end
+end
+
+-- save MCP state - turtles, messages, jobs to disk
+
+if runMode == "reboot" then
+	os.reboot()
+end
+
+print("Exiting MCP Runtime.")

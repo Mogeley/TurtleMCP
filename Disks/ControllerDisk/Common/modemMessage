@@ -1,0 +1,29 @@
+-- Modem Message Data Structure
+
+local modemMessage = {
+	tostring = function( self )
+		return "From: "self.senderChannel..", ReplyTo: "..self.replyChannel..", Distance: "..self.senderDistance..", Message: "..self.messageData.tostring()
+	end,
+}
+
+local function parseMessage(messageData)
+	-- separate "To:" from rest of message
+end
+
+local modemMessageMetatable = {
+	__index = modemMessage,
+	__tostring = modemMessage.tostring,
+}
+
+function new(event, modemSide, senderChannel, replyChannel, messageData, senderDistance)
+    local m = {
+		event = event,
+		modemSide = modemSide,
+		senderChannel = senderChannel,
+		replyChannel = replyChannel,
+		messageData = messageData,
+		senderDistance = senderDistance or 0
+	}
+	setmetatable( m, modemMessageMetatable )
+	return m
+end

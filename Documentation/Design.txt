@@ -18,7 +18,7 @@ To set up a base / control hub you need:
 - Wireless Turtle
 - GPS computers
 
-Setup a Turtle initialization area wtu a plcae to add a new turtle. Next to this place the disk drive, next to the drive place the command computer. The GPS and the MCP cna go anywhere within wifi range.
+Setup a Turtle initialization area with a plcae to add a new turtle. Next to this place the disk drive, next to the drive place the command computer. The GPS and the MCP cna go anywhere within wifi range.
 
 
 Tasks:

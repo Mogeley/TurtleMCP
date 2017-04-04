@@ -1,0 +1,24 @@
+-- controller - Plans, Issues, Processes, and Executes Commands for Turtles
+
+-- setup command queue
+
+function Process(modemMSG)
+
+	-- is the message to me?
+	if modemMSG.messageData.toId == os.getComputerID() then 
+		-- explicit commands
+		if modemMSG.messageData.messageType == "Stop" then -- Stop!
+		elseif modemMSG.messageData.messageType == "Acknowledge" then
+		else 
+		end
+	else -- listen implicitly - this may effect me 
+	end
+end
+
+function Listen() -- blocking command that listens for a message and processes message
+	-- wait for command, acknowledge message recieved
+	local modemMSG = Wireless.Listen(acknowledge=true)
+
+	-- Process command
+	Process(modemMSG)
+end

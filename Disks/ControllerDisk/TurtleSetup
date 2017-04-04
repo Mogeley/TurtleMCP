@@ -1,14 +1,19 @@
 print("Setup Turtle... Copying Files...")
 
-local FileList = fs.list("disk/Turtle") --Table with all the files and directories available
+function copyFolder(filePath)
+	local FileList = fs.list(filePath) --Table with all the files and directories available
 
--- copy the Turtle folder
-for _, file in ipairs(FileList) do --Loop. Underscore because we don't use the key, ipairs so it's in order
-  print("disk/Turtle/"..file) --Print the file name
-  fs.copy("disk/Turtle/"..file, file)
-end --End the loop
+	-- copy the files in the folder
+	for _, file in ipairs(FileList) do --Loop. Underscore because we don't use the key, ipairs so it's in order
+	  print(filePath.."/"..file) --Print the file name
+	  fs.copy(filePath.."/"..file, file)
+	end --End the loop
+end
 
---fs.copy("disk/Turtle/startup", "startup")
---fs.copy("disk/Turtle/host", "host")
+-- Copy Turtle Folder
+copyFolder("disk/Turtle")
+
+-- copy the Common folder
+copyFolder("disk/Common")
 
 print("Setup Complete! Reboot.")

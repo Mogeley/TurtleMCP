@@ -1,0 +1,5 @@
+print("Launching MCP...")
+
+
+-- Start run loop
+shell.run("MCP")
