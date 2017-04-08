@@ -10,6 +10,8 @@ os.loadAPI("Wireless") -- Init wireless modem
 turtles = {} -- list of turtles available for use with assignments
 messages = {} -- list of outstanding messages - messages that have not been acknowledged
 jobs = {}     -- list of current jobs being controlled
+commands = {} -- list of current commands to turtles
+modemMSG = {} -- empty modem message
 messageId = 0 -- starting message Id
 jobId = 0     -- starting job Id
 
@@ -20,8 +22,16 @@ jobId = 0     -- starting job Id
 runMode = "run"
 runState = "startup"
 
+
 print("runMode: "..runMode)
 print("runState: "..runState)
+
+function ListenForMessage()
+	modemMSG = Wireless.Listen(acknowledge=true)
+end
+
+function SendQueuedCommands()
+end
 
 -- Run Loop
 while runMode == "run" do
@@ -32,24 +42,51 @@ while runMode == "run" do
 		runState = "normal"
 	elseif runState == "normal" then
 		-- listen for commands from commanders and messages from turtles
-		local modemMSG = Wireless.Listen(acknowledge=true)
+		--local modemMSG = Wireless.Listen(acknowledge=false)
+		local result = parallel.waitForAny(SendQueuedCommands, ListenForMessage)
 
-		-- handle messages
-		if modemMSG.messageData.messageType == "Job" then
-			-- handle "Job" messages from Commanders
-			if modemMSG.messageData.messageDetails.jobId == 0 then -- new job
-				-- job has: type, state, parameters
-				local newJob = modemMSG.messageData.messageDetails
-				jobId = jobId + 1
-				newJob.Id = jobId
-				table.insert(jobs, job.new(newJob))
-			else -- update job details
+		if result == 2 then
+			-- handle messages
+			if modemMSG.messageData.messageType == "Job" then -- job utilities
+				-- Job messages
+				if modemMSG.messageData.messageAction == "List" then -- list jobs
+				elseif modemMSG.messageData.messageAction == "New" then -- New Job
+					-- Add new job to table
+					local newJob = modemMSG.messageData.messageDetails
+					jobId = jobId + 1
+					newJob.Id = jobId
+					table.insert(jobs, job.new(newJob))
+					-- reply with job Id
+				elseif modemMSG.messageData.messageAction == "Update" then -- Update Job
+
+				end
+			elseif modemMSG.messageData.messageType == "Direct" then -- turtle direct control
+				-- handle direct control messages
+				if modemMSG.messageData.messageAction == "Forward" then
+				elseif modemMSG.messageData.messageAction == "Back" then
+				elseif modemMSG.messageData.messageAction == "Up" then
+				elseif modemMSG.messageData.messageAction == "Down" then
+				elseif modemMSG.messageData.messageAction == "TurnLeft" then
+				elseif modemMSG.messageData.messageAction == "TurnRight" then
+				elseif modemMSG.messageData.messageAction == "MarkPosition" then
+					-- set position type (parking, refuel, dropoff)
+				elseif modemMSG.messageData.messageAction == "StartRegion" then
+					-- set region shape(box, path) and start position
+				elseif modemMSG.messageData.messageAction == "EndRegion" then
+					-- end region set name and permissions (any, locking - allow only one turtle, exclude - turtles may never enter)
+				elseif modemMSG.messageData.messageAction == "Park" then
+					-- find a parking spot
+				end
+			elseif modemMSG.messageData.messageType == "Turtles" then -- turtle utilities
+			elseif modemMSG.messageData.messageType == "Messages" then -- message utilities
+			elseif modemMSG.messageData.messageType == "MCP" then -- MCP utilities
+			else
+				-- handle turtle messages / acks
 			end
-		elseif modemMSG.messageData.messageType == "Direct" then
-			-- handle direct control messages
-		else
-			-- handle turtle messages / acks
+
+			-- turn jobs into commands queue to send out
 		end
+		
 	end
 end
 

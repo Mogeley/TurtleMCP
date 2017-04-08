@@ -11,12 +11,13 @@ local messageMetatable = {
 	__tostring = message.tostring,
 }
 
-function new(toId, fromId, messageId, messageType, messageDetails)
+function new(toId, fromId, messageId, messageType, messageAction, messageDetails)
 	local m = {
 		toId = toId,
 		fromId = fromId,
 		messageId = messageId
 		messageType = messageType,
+		messageAction = messageAction,
 		messageDetails = messageDetails,
 	}
 	setmetatable( m, messageMetatable )
